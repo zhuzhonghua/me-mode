@@ -1,10 +1,6 @@
-# 一个VIM简化变笨的Emacs的Minor-Mode
+# 一个VIM简化版本的Emacs的Minor-Mode
 
 An Emacs Minor Mode
-
-    Title: 写一个VIM简化版本的Emacs的Minor-Mode
-    Date: 2021-09-23T23:58:47
-    Tags: Emacs VIM 简化 minor-mode
 
 创建文件me-mode.el，放在.emacs.d里的elisp目录。
 
