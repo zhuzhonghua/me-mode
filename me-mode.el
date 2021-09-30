@@ -43,7 +43,8 @@
 			(delete-overlay me-line-selection-overlay))
 	(setq me-line-selection-overlay nil)
 	(setq me-visual-begin-pos nil)
-	(setq me-visual-end-pos nil))
+	(setq me-visual-end-pos nil)
+	(setq mark-active nil))
 
 (advice-add #'keyboard-quit :before #'me-advice-clear-everything)
 
@@ -68,7 +69,8 @@
 			(progn
 				(me-recalc-visual-pos-next-line)
 				(move-overlay me-line-selection-overlay me-visual-begin-pos me-visual-end-pos)
-				(overlay-put me-line-selection-overlay 'face 'region))))
+				(overlay-put me-line-selection-overlay 'face 'region)
+				(me-setmark-line-visual-selection))))
 
 (defun me-advice-previous-line (&rest r)
 	"move previous line check visual selection"
@@ -76,13 +78,19 @@
 			(progn
 				(me-recalc-visual-pos-previous-line)
 				(move-overlay me-line-selection-overlay me-visual-begin-pos me-visual-end-pos)
-				(overlay-put me-line-selection-overlay 'face 'region))))
+				(overlay-put me-line-selection-overlay 'face 'region)
+				(me-setmark-line-visual-selection))))
 
 (defun me-advice-move-beginning (&rest r)
 	(indent-for-tab-command))
 
+(defun me-advice-tab (&rest r)
+	(if me-line-selection-overlay
+			(indent-region me-visual-begin-pos me-visual-end-pos)))
+
 (advice-add #'next-line :after #'me-advice-next-line)
 (advice-add #'previous-line :after #'me-advice-previous-line)
+(advice-add #'indent-for-tab-command :after #'me-advice-tab)
 
 (defmacro me-push-keystrokes (k)
 	"the macro save keystrokes to later action"
@@ -117,7 +125,8 @@
 			(move-overlay me-line-selection-overlay me-visual-begin-pos me-visual-end-pos)
 		(setq me-line-selection-overlay
 					(make-overlay me-visual-begin-pos me-visual-end-pos)))
-	(overlay-put me-line-selection-overlay 'face 'region))
+	(overlay-put me-line-selection-overlay 'face 'region)
+	(me-setmark-line-visual-selection))
 
 (defun me-trigger-operation (arg)
 	"trigger multi key operation"
@@ -218,7 +227,7 @@
 
 (defun me-previous-line-insert ()
 	(interactive)
-	(move-previous-line-new-line)
+	(me-move-previous-line-new-line)
 	(me-mode-disable)
 	(indent-for-tab-command))
 
@@ -276,12 +285,23 @@
 				(me-line-selection-overlay ;; by big V
 				 (progn
 					 (kill-ring-save me-visual-begin-pos me-visual-end-pos)
-					 (me-advice-clear-everything)))))
+					 (me-advice-clear-everything)))
+				((eq 'y (car me-pre-keystrokes)) ;; yy action dont clear keystrokes
+				 (push 'y me-pre-keystrokes)
+				 (kill-ring-save (line-beginning-position) (line-end-position)))
+				(t ;; for yy
+ 				 (push 'y me-pre-keystrokes))))
 
 (defun me-p-bind ()
 	"when press p"
 	(interactive)
-	(yank))
+	(if (and (eq 'y (car me-pre-keystrokes))
+					 (eq 'y (cadr me-pre-keystrokes)))
+			(progn
+				(move-end-of-line nil)
+				(newline)))
+	(yank)
+	(me-advice-clear-everything))
 
 (defun me-esc-bind ()
 	"when press esc"
@@ -330,7 +350,7 @@
 
 ;; implemented command
 (define-key me-local-mode-map [escape] 'me-esc-bind)
-(define-key me-local-mode-map (kbd "0") 'move-beginning-of-line)
+(define-key me-local-mode-map (kbd "0") 'me-move-beginning)
 (define-key me-local-mode-map (kbd "a") 'me-forward-char-insert)
 (define-key me-local-mode-map (kbd "A") 'me-line-end-insert)
 (define-key me-local-mode-map (kbd "b") 'backward-word)
