@@ -348,6 +348,18 @@
 	(me-advice-clear-everything)
 	(set-mark-command nil))
 
+(defun me-left-bracket-bind ()
+	"when press ("
+	(interactive)
+	(if (equal ?\) (char-before (point)))
+			(backward-sexp)))
+
+(defun me-right-bracket-bind ()
+	"when press )"
+	(interactive)
+	(if (equal ?\( (char-after (point)))
+			(forward-sexp)))
+
 ;; implemented command
 (define-key me-local-mode-map [escape] 'me-esc-bind)
 (define-key me-local-mode-map (kbd "0") 'me-move-beginning)
@@ -376,6 +388,8 @@
 (define-key me-local-mode-map (kbd "<") 'beginning-of-buffer)
 (define-key me-local-mode-map (kbd ">") 'end-of-buffer)
 (define-key me-local-mode-map (kbd "$") 'move-end-of-line)
+(define-key me-local-mode-map (kbd "(") 'me-left-bracket-bind)
+(define-key me-local-mode-map (kbd ")") 'me-right-bracket-bind)
 
 
 ;; ignore command
